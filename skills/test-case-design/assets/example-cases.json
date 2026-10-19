@@ -1,0 +1,43 @@
+{
+  "title": "提醒设置测试用例示范",
+  "status": "待评审",
+  "prd": {"path": "prd.json", "sha256": "b6508918576406ef04d074ea2f940d8a0ef511594db8f0f01ac1bc68decc2e19", "status": "已确认"},
+  "requirements": [
+    {"id":"REQ-001","title":"设置提醒","status":"已确认","source":"虚构 PRD REQ-001 三条规则"},
+    {"id":"REQ-002","title":"取消失效提醒","status":"已确认","source":"虚构 PRD REQ-002 两条规则"},
+    {"id":"REQ-003","title":"键盘设置入口","status":"已确认","source":"虚构 PRD REQ-003"}
+  ],
+  "conditions": [
+    {"id":"AC-001","req_id":"REQ-001","text":"有编辑权限且时间有效时保存成功，无权限不能保存。","status":"已确认","source":"PRD REQ-001 规则 1、2"},
+    {"id":"AC-002","req_id":"REQ-001","text":"提醒时间允许等于截止时间，但不允许晚于截止时间。","status":"已确认","source":"PRD REQ-001 规则 2"},
+    {"id":"AC-003","req_id":"REQ-001","text":"版本不匹配拒绝覆盖并说明冲突。","status":"已确认","source":"PRD REQ-001 规则 3"},
+    {"id":"AC-004","req_id":"REQ-002","text":"完成待办不发送，重复触发同一版本不重复通知。","status":"已确认","source":"PRD REQ-002"},
+    {"id":"AC-005","req_id":"REQ-003","text":"键盘可完成设置，反馈不只依靠颜色。","status":"已确认","source":"PRD REQ-003"}
+  ],
+  "cases": [
+    {"id":"TC-001","title":"合法设置成功读回","type":"functional","level":"system","method":"scenario","priority":"P0","priority_reason":"核心设置能力决定提醒能否建立。","req_ids":["REQ-001"],"condition_ids":["AC-001"],"definition_status":"已确认","execution_status":"未执行","preconditions":["匿名编辑者可访问待办，当前版本为 1，截止为测试时钟 D。"],"data":["提醒时刻 D 之前的有效时刻；提交 expected_version=1。"],"steps":[{"action":"编辑者保存有效提醒设置。","expected":"显示保存成功及已保存时刻。"},{"action":"再次读取设置。","expected":"读取的时刻与保存输入一致。"}],"assertions":["成功状态与持久/模拟读取结果一致，不仅检查非空。"],"cleanup":"清除该隔离测试待办与提醒。","automation":"可自动化","automation_reason":"可通过系统入口和读回结果断言。"},
+    {"id":"TC-002","title":"截止时刻边界可保存","type":"boundary","level":"system","method":"boundary_value","priority":"P1","priority_reason":"边界端点易发生包含关系错误。","req_ids":["REQ-001"],"condition_ids":["AC-002"],"definition_status":"已确认","execution_status":"未执行","preconditions":["编辑者有权限，待办截止为测试时钟 D。"],"data":["提醒时间恰等于 D。"],"steps":[{"action":"保存提醒时间 D。","expected":"允许保存，读取值仍为 D。"}],"assertions":["规则为小于等于，不能错误拒绝端点。"],"cleanup":"删除隔离测试设置。","automation":"可自动化","automation_reason":"端点值和保存结果可精确比较。"},
+    {"id":"TC-003","title":"晚于截止的设置被拒绝","type":"negative","level":"system","method":"equivalence","priority":"P1","priority_reason":"非法时间不应产生无效提醒。","req_ids":["REQ-001"],"condition_ids":["AC-002"],"definition_status":"已确认","execution_status":"未执行","preconditions":["编辑者有权限，截止为 D，旧设置可读。"],"data":["提醒为截止时间 D 后 1 秒，构造确定晚于截止的非法输入。"],"steps":[{"action":"保存晚于截止的提醒。","expected":"拒绝保存并说明时间无效。"},{"action":"读取设置。","expected":"旧值未被非法输入覆盖。"}],"assertions":["错误可见且无非法状态写入。"],"cleanup":"清除测试待办。","automation":"可自动化","automation_reason":"非法等价类可由条件与读回验证。"},
+    {"id":"TC-004","title":"只读成员无法保存提醒","type":"permission","level":"system","method":"decision_table","priority":"P0","priority_reason":"防止对象编辑权限被绕过。","req_ids":["REQ-001"],"condition_ids":["AC-001"],"definition_status":"已确认","execution_status":"未执行","preconditions":["匿名成员只能查看，不能编辑该待办。"],"data":["同一有效提醒时刻、当前版本和只读成员身份。"],"steps":[{"action":"只读成员尝试保存提醒设置。","expected":"不允许保存，说明无编辑权限。"}],"assertions":["当前待办提醒值不变化；有效输入不能覆盖权限拒绝。"],"cleanup":"撤除隔离成员和测试待办。","automation":"可自动化","automation_reason":"角色条件与业务副作用可断言。"},
+    {"id":"TC-005","title":"旧版本保存不覆盖新值","type":"state","level":"system","method":"state_transition","priority":"P0","priority_reason":"避免并发/旧页面覆盖已保存的新设置。","req_ids":["REQ-001"],"condition_ids":["AC-003"],"definition_status":"已确认","execution_status":"未执行","preconditions":["两个编辑上下文读取同一待办版本 1。"],"data":["上下文 A 先保存新值，上下文 B 仍提交版本 1。"],"steps":[{"action":"A 保存后，B 再以旧版本提交另一时刻。","expected":"B 保存被拒绝并说明版本冲突。"}],"assertions":["读取结果为 A 的值，B 不覆盖。"],"cleanup":"清除隔离待办。","automation":"可自动化","automation_reason":"顺序与版本状态可在测试时钟中复现。"},
+    {"id":"TC-006","title":"完成待办与重复触发不新增通知","type":"regression","level":"system","method":"scenario","priority":"P1","priority_reason":"用当前 PRD 取消与去重规则作为后续版本回归基线。","req_ids":["REQ-002"],"condition_ids":["AC-004"],"definition_status":"已确认","execution_status":"未执行","preconditions":["隔离待办 A 未完成已设置提醒；待办 B 设置后已完成。"],"data":["推进测试时间超过触发时刻，并再次推进同一时刻。"],"steps":[{"action":"首次推进时间。","expected":"A 生成一条模拟通知，B 无新通知。"},{"action":"再次触发同一提醒版本。","expected":"A 不新增第二条，B 仍无通知。"}],"assertions":["单版本通知数量与完成态行为均符合 PRD。"],"cleanup":"清空隔离待办和模拟通知。","automation":"可自动化","automation_reason":"当前已给规则可固定为后续回归断言，不宣称有真实旧版本结果。"},
+    {"id":"TC-007","title":"键盘设置与可读成功反馈","type":"accessibility","level":"system","method":"scenario","priority":"P1","priority_reason":"输入方式和反馈影响可使用性。","req_ids":["REQ-003"],"condition_ids":["AC-005"],"definition_status":"已确认","execution_status":"未执行","preconditions":["可访问设置界面，用户有编辑权限。"],"data":["键盘与有效提醒输入；无需鼠标。"],"steps":[{"action":"只用键盘到达字段、填写并保存。","expected":"能够完成保存，出现可读文字反馈，不能只有颜色变化。"}],"assertions":["操作无需鼠标，保存状态可用文字识别。"],"cleanup":"清除设置，恢复界面状态。","automation":"需人工","automation_reason":"输入设备操作与可读反馈需实际界面核对。"},
+    {"id":"TC-008","title":"用户完成设置到提醒的验收路径","type":"acceptance","level":"acceptance","method":"scenario","priority":"P0","priority_reason":"验证用户核心目标在完整路径中成立。","req_ids":["REQ-001","REQ-002"],"condition_ids":["AC-001","AC-004"],"definition_status":"已确认","execution_status":"未执行","preconditions":["匿名编辑者与未完成隔离待办，合法截止时间。"],"data":["在截止前设置提醒并用测试时钟到达触发时刻。"],"steps":[{"action":"保存设置、读回并推进时间。","expected":"合法设置保留，到期生成一条本地模拟通知。"}],"assertions":["用户目标在授权本地模拟中成立，不代表真实站内渠道送达。"],"cleanup":"清空全部隔离记录。","automation":"可自动化","automation_reason":"完整路径可在可控时钟下断言。"}
+  ],
+  "coverage_gaps": [],
+  "type_notes": [
+    {"type":"functional","applicability":"适用","reason":"PRD 有明确正常设置行为。"},
+    {"type":"boundary","applicability":"适用","reason":"明确时间端点包含关系。"},
+    {"type":"negative","applicability":"适用","reason":"晚于截止必须拒绝。"},
+    {"type":"permission","applicability":"适用","reason":"保存需要编辑权限。"},
+    {"type":"security","applicability":"不适用","reason":"本小例不重复添加与权限相同的防护用例，未给额外安全规则。"},
+    {"type":"api","applicability":"不适用","reason":"未给具体接口契约。"},
+    {"type":"state","applicability":"适用","reason":"版本与并发状态可观察。"},
+    {"type":"compatibility","applicability":"不适用","reason":"没有指定设备或版本范围。"},
+    {"type":"accessibility","applicability":"适用","reason":"给了键盘与反馈规则。"},
+    {"type":"performance","applicability":"不适用","reason":"未给负载与阈值，不编 SLA。"},
+    {"type":"reliability","applicability":"不适用","reason":"未给依赖故障或恢复规则，不假设实现。"},
+    {"type":"regression","applicability":"适用","reason":"将已给规则建立为后续版本回归基线。"},
+    {"type":"acceptance","applicability":"适用","reason":"有完整用户目标和本地模拟结果。"}
+  ]
+}

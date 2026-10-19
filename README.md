@@ -2,7 +2,9 @@
 
 让一个人借助 Agent，把想法推进到可交付的成品。本仓库维护可移植的标准 `SKILL.md` 技能：流程、参考规范、脚本和示例放在同一目录，不绑定特定 Agent 或企业服务。
 
-当前维护 **2 个 SKILL**：[`requirement-analysis`](skills/requirement-analysis/SKILL.md) 把一句话需求转成可评审的图文需求分析；[`technical-design`](skills/technical-design/SKILL.md) 基于需求及系统材料编写可落地的图文技术方案。完整技能链为 **需求分析 → 技术方案 → 核验与文档交付**，不包含实际产品开发、部署或上线。
+当前维护 **4 个 SKILL**：[`requirement-analysis`](skills/requirement-analysis/SKILL.md) 生成图文 PRD；[`technical-design`](skills/technical-design/SKILL.md) 编写技术方案；[`test-case-design`](skills/test-case-design/SKILL.md) 基于 PRD 设计多类型测试用例；[`product-development`](skills/product-development/SKILL.md) 按前置文档实施开发与验证。完整技能链为 **PRD → 技术方案与测试用例 → 开发 → 验证交付**，不自动部署、提交或推送。
+
+四项技能共用同一任务目录和 `pipeline.json`，用相对路径、文件摘要及 PRD 版本绑定交接。测试用例设计只要求 PRD，不强制需要技术方案；开发可自动读取已登记用例。开发或测试用例技能单独调用缺前置时，先询问是否帮助完善，用户同意才补写。
 
 ## 目录
 
@@ -32,41 +34,39 @@ cd OnePersonTeamSKILLs
 以下提示词无需补参数即可在**已经打开本仓库**的 Agent 中运行。它使用一项明确标为虚构的演示需求，贯穿仓库当前全部技能；换成真实需求时，替换“演示输入”即可。
 
 ```text
-请使用当前打开的 OnePersonTeamSKILLs 仓库，完成一次从一句话需求到图文需求分析、图文技术方案的端到端文档交付。
+请使用当前打开的 OnePersonTeamSKILLs 仓库，完成一次从一句话需求、PRD、技术方案到本地演示开发和验证的端到端交付。
 
 【技能发现与串联】
-先枚举当前仓库 skills/ 下实际存在的所有 SKILL.md，逐个读取入口，按各自要求读取 references、脚本说明和相关素材。按输入输出关系串联所有实际存在且适用于本任务的技能：先 requirement-analysis 生成需求分析，再 technical-design 以该需求的正文或 JSON 为输入生成技术方案，最后统一核验和交付。保留原始需求编号、规则、验收、来源及确认状态。中文表达优化、配图、渲染和检查都是各技能内置环节，不是另几个技能。不要臆造产品开发或部署技能；以后若新增技能与任务无关，说明原因，不为“全部调用”执行越权操作。
+读取当前仓库四个实际技能及必读资源，依次执行 requirement-analysis → technical-design → test-case-design → product-development。四个阶段共用 outputs/reminder-demo/ 作为任务文档根：需求阶段生成 prd.json、prd.html 并登记；设计阶段读取 PRD 生成 technical-design.json/HTML 并绑定摘要；用例阶段自动读取同任务 PRD（技术方案可选，不强制），生成 test-cases.json/MD 并绑定 PRD；开发阶段从本轮交接及 pipeline.json 自动读全 PRD、技术方案和已登记用例，不让我重复发送材料。不把仓库 assets 示例当真实前置，不按其他任务的修改时间选文件。
 
-【演示输入】
+【明确的虚构演示范围】
 一句话需求：给团队待办加一个到期提醒。
-这是一项虚构演示，不是线上业务材料。请先做“探索草稿”。
-演示约束：产品是团队待办网页；待办已有负责人、截止时间、完成状态和成员访问权限；本期只考虑现有站内通知渠道，不做短信、电话或管理者升级提醒；通知不能绕过待办当前权限。
-提醒时间、时区、重复与重试规则、容许延迟、数据保存期限、指标基线和目标值尚未确定。
+仅开发本地模拟，不连接线上账户、真实通知、生产数据库，不宣称生产就绪。在 outputs/reminder-demo/app/ 新建演示项目，不修改技能本身和其他项目；目录已有未知内容时停止并询问。
+演示技术栈指定 Python 3.9+ 标准库，使用内存模型和内置 unittest，不安装依赖。本地演示通过 python app.py 进入终端交互，支持创建待办、设置提醒、模拟时间推进、查看模拟站内通知；图文文档由前两个技能生成。
+演示规则由本提示明确给定：待办有负责人、带时区截止时间、完成状态、成员访问权限和版本；提醒时间由用户指定且不得晚于截止时间；所有时间转 UTC 比较；设置须有编辑权限并校验期望版本；到期时再次检查任务版本、完成/删除状态和接收者权限，不满足则取消；同一待办提醒版本最多生成一条模拟通知；打开历史通知时检查当前权限。
+模拟渠道能确定本次本地消息是否写入，不做网络重试、跨进程持久化、短信、电话、多渠道、管理者升级或真实部署。内存数据退出即清空，这是演示限制而非真实产品数据保存策略。未给的生产容量、延迟、工期等保持待确认，不能扩展到本次模拟实施范围。
 
-【分析与表达】
-保留需求原话，区分“已确认”“建议”“待确认”；演示中已给的约束可作为演示来源，不可冒充真实调研结论。缺失规则可以给建议，但必须保持建议状态。若关键缺口妨碍探索草稿成立，一次提出最多三个必要问题；不要为写得具体而编造数据、访谈、负责人、接口、工期或效果。
-写清目标用户、使用场景、本期与非本期范围、推荐方案、业务规则、异常恢复、数据权限、质量要求、衡量口径、风险与待确认事项。每个需求使用稳定编号，给出可观察的“给定／当／则”验收标准。
-完成分析初稿后，单独执行技能内置的中文表达优化：保留事实、术语、编号、状态、条件、否定和承诺；去掉空话、翻译腔和同义反复，检查句间节奏，不把严谨规则改成含糊口语。
+【需求和技术方案】
+保留原话、稳定 REQ 与 DES 编号，区分本提示确认的演示约束、设计建议、生产待确认项。写清场景、范围、契约、异常、权限、数据、验收与风险。技术方案映射 REQ → DES → 验证，明确内存模拟的保证范围，不把模拟去重表述为外部消息恰好一次送达。
+成稿后分别执行内置中文表达优化，保留术语、字段、状态、条件、否定和承诺。需求文档含主流程和低保真界面/操作示意；技术方案按适用性绘制架构、时序、状态、数据流及研发依赖，不为凑图种添加无关组件。
 
-【技术方案】
-用 technical-design 完整读取上一步需求结果，建立 REQ → DES → 验证映射，写清候选架构、模块职责、接口与字段契约、事务与并发、失败和未知结果恢复、权限、安全、容量估算方法、测试、实施依赖、迁移、发布停止与回退条件。此演示不提供真实代码、技术栈和规模，保持“探索草稿”；提出设计建议但不冒充已安装依赖、现有接口或实测结果。阻断实施的缺口明确记录，不自行编造工期、QPS 或生产拓扑。
-技术方案同样单独优化表达，术语保留并用准确中文解释，不把渠道受理写成用户收到、不把去重写成恰好一次送达。
+【测试用例】
+用 test-case-design 通过同任务 PRD 设计功能、边界、异常、权限、状态、回归和验收等适用用例，逐条关联 REQ 与测试条件 AC；性能、具体接口等缺标准时列待确认或说明不适用，不编 SLA、API 或错误码。每条 TC 包含前提、数据、操作、每步预期、断言、清理、优先级和自动化建议；生成阶段全部未执行。保存 test-cases.json 和 test-cases.md，校验后登记到 pipeline.json 并绑定 PRD 摘要。若单独调用缺 PRD，先问是否帮我完善，等待回复；本次已明确授权前置生成，不重复问同一许可。
 
-【图文与文件】
-需求分析绘制含取消或失败分支的主流程图与低保真界面示意。技术方案按适用性绘制架构、关键时序、ER 或状态图，并补充数据流、部署、研发依赖、泳道与处理流程；不适用的图种给理由，不为了凑图而编内容。图中状态、接口、字段及需求/设计编号与正文一致，不交未渲染的代码充数。
-在仓库 outputs/reminder-demo/ 下分别交付需求分析 JSON、HTML 和技术方案 JSON、HTML；创建目录前检查已有内容，若同名文件不是本次生成的，另选文件名，不覆盖。
-有 Python 3.9+ 时，分别按两技能契约组织 JSON，运行各自 scripts/check.py，再运行各自 scripts/render.py。脚本路径相对对应 SKILL.md 所在目录定位。无 Python 时按同一规范直接生成，不安装全局依赖。不要复制仓库示例冒充本次分析。
+【开发前门禁与实施】
+将前置权威 JSON 登记到 pipeline.json，完整读取并核验路径、摘要、设计绑定版本及正文一致性。开发授权只覆盖上述明确的本地演示。新的关键建议、冲突或缺失规则先问，不能把“完善再开发”当成自动批准所有设计。若缺少 PRD/技术方案，先询问是否帮我完善；此提示已明确授权前置生成，无需重复询问已有流程许可。
+通过门禁后，在 app/ 实现实际终端入口、领域逻辑与测试。包含设置冲突、无权限、旧版本、已完成、重复时间推进、历史通知权限撤销等异常，不只生成骨架、TODO 或 mock 成功截图。记录 REQ → DES → 文件/符号 → 测试。
 
 【验证与交付】
-核对正文、规则、来源、需求编号、验收和图形的一致性。实际渲染检查桌面和窄屏；有打印能力时检查打印分页。结构错误修复后再交付，表达提醒结合上下文判断，不为清零而改坏事实。做不到的验证明确说明，不以文件存在代替验证通过。
-最后给出产物路径或附件、打开方式、关键待确认项、已完成检查和未验证范围。只交付可用的完整文档，不只给提纲或教程。未经我另行要求，不发布、不上传业务材料、不修改产品代码、不提交或推送 Git。
+按两文档技能的脚本检查和渲染；运行产品单元测试，并通过实际启动命令完成至少一条创建—设置—推进时间—查看通知路径。核验文档摘要未变、图文与代码规则一致；能渲染时检查桌面和窄屏，做不了的验证说明缺口。
+最后交付 PRD/技术方案的 JSON/HTML、测试用例 JSON/MD、pipeline.json、app/ 完整代码和实际测试，以及 delivery.md（真实命令、结果、启动方式、REQ/AC/TC/DES 映射、演示限制与未覆盖）。生成用例与执行结果分开，未执行用例不能称为通过。未经另行要求不提交或推送 Git、不上传材料、不部署，不把本地模拟测试称为真实生产验证。
 ```
 
 ### 交付后应看到什么
 
-- `outputs/reminder-demo/` 下有本次生成的需求分析 JSON、HTML 与技术方案 JSON、HTML，文件名以 Agent 实际交付为准。
-- 两份 HTML 用浏览器直接打开即可阅读：需求文档明确规则、异常与验收，技术方案明确实现契约、研发图表、测试和回退，并可追溯到同一需求编号。
-- 交付说明区分已经做过的检查和能力受限而未做的检查。探索草稿不等于实施或上线批准。
+- `outputs/reminder-demo/` 下有 PRD、技术方案的 JSON/HTML、测试用例 JSON/MD、`pipeline.json`、本地演示 `app/` 代码及测试、`delivery.md`，文件名以实际交付为准。
+- 开发阶段从同任务清单读前置，不重复要求用户发送；文件变更、多个候选和旧设计绑定会阻断，不静默选旧文档。
+- 两份文档说明规则与设计，代码有真实启动入口和验证；演示限制、未确认事项与未覆盖检查明确披露，不等于生产上线批准。
 
 想先看阅读效果，可以下载并用浏览器打开仓库中的[团队待办需求分析示例](skills/requirement-analysis/assets/团队待办需求分析示例.html)。这是虚构样例，不是自动生成真实业务需求的替代品；GitHub 文件页面可能只展示源码。
 
@@ -97,6 +97,18 @@ cd OnePersonTeamSKILLs
 请读取本仓库 skills/technical-design/SKILL.md 及必读资源，基于我提供的需求文档和系统材料编写可落地的图文技术方案，保留需求编号和确认状态，覆盖实现契约、异常、研发图表、测试与发布回退，输出到 outputs/technical-design/，关键缺口先问我，验证后交付。
 ```
 
+**产品开发**
+
+```text
+请读取本仓库 skills/product-development/SKILL.md 及必读资源，在我授权的目标项目中按指定 PRD 和技术方案开发；端到端时从同任务 pipeline.json 自动读取前置，缺任一文档时先询问是否帮我完善，确认范围后再实施、测试并交付代码与验证报告，不自动提交、推送或部署。
+```
+
+**测试用例设计**
+
+```text
+请读取本仓库 skills/test-case-design/SKILL.md 及必读资源，基于指定或同任务 pipeline.json 中的 PRD 生成不同类型测试用例，包含具体数据、步骤、预期、断言与覆盖缺口；没有 PRD 时先询问是否帮我完善，等待回复，不强制要求技术方案，输出未执行的用例 JSON 和易读文档。
+```
+
 ### 仓库不在当前目录时
 
 把技能路径换成实际的绝对路径，例如“读取我已授权的 `/path/to/OnePersonTeamSKILLs/skills/requirement-analysis/SKILL.md`”。`/path/to/` 是示意位置，不能照抄成真实路径。
@@ -108,7 +120,7 @@ cd OnePersonTeamSKILLs
 <a id="skill-details"></a>
 ## 每个 SKILL 的详细介绍
 
-本节介绍 `skills/` 下实际维护的两个技能：需求分析与技术方案。参考文件、渲染脚本和检查脚本都是各技能的组成部分，不是独立 SKILL。
+本节介绍 `skills/` 下实际维护的四个技能：需求分析、技术方案、测试用例和产品开发。参考文件与脚本是各技能的组成部分，不是独立 SKILL。
 
 ### requirement-analysis：一句话需求分析
 
@@ -207,6 +219,49 @@ cd OnePersonTeamSKILLs
 
 **限制**：Python 3.9+ 仅辅助校验和渲染，无 pip/npm/CDN 依赖；无 Python 时 Agent 可按规范直接生成。复杂图需拆分或自绘准确 SVG，不是无限布局 UML 引擎。特定格式依赖宿主能力，未提供现状或关键约束时先澄清，允许探索稿才保留候选方案。结构通过不证明业务、算法、性能或真实运行正确；不自动实施、迁移、压测、部署或上线。
 
+### product-development：基于 PRD 与技术方案开发
+
+**入口**：[skills/product-development/SKILL.md](skills/product-development/SKILL.md)
+
+**输入与联动**：指定 PRD、技术方案、目标代码项目及实施范围。端到端从本轮已验证交接或同任务 `pipeline.json` 自动读取前两技能结果，保留来源、状态、REQ/DES 和版本。不会在其他任务按时间挑最新文档，也不会把技能 assets 样例当真实输入。
+
+**缺文档行为**：单独使用缺 PRD 或设计时，先问“是否要我先帮你完善缺少的 PRD 和技术方案，确认开发范围后再开始开发？”用户同意才进入前置技能；使用已有文档则请求可访问材料；拒绝则不开发。只缺一份时保留另一份，不重复索要。“补写许可”不是自动批准所有新设计，关键缺口仍需确认。
+
+**实施流程**：核对文档和现状 → 明确项目与基线 → REQ/DES 到代码测试映射 → 按设计实现最小完整路径 → 单测/构建/集成/实际入口验证 → 交付代码、测试和 delivery.md。保持用户已有改动和项目栈，设计变更同步文档；失败、权限、并发、未知结果必须按范围验证，mock 不冒充真实集成。
+
+**辅助资源**：
+
+- [references/handoff.md](skills/product-development/references/handoff.md)：同任务清单、选择顺序、版本绑定、缺失询问与结果分流。
+- [references/development.md](skills/product-development/references/development.md)：实施边界、基线、真实入口验证和交付报告规范。
+- [scripts/pipeline.py](skills/product-development/scripts/pipeline.py)：标准库登记/解析相对前置路径、摘要和 PRD—设计版本；只做文件门禁，不生成文档、代码或批准。
+- [tests/test_handoff.py](skills/product-development/tests/test_handoff.py)：缺失、歧义、旧版本、路径越界、符号链接、状态保护、脚本迁移和上游联动测试。
+
+**输出与限制**：授权项目的真实代码、相关测试和运行配置、验证与缺口报告。具体语言、框架、目标项目和关键验收未知时先澄清，不偷偷默认。Python 仅辅助文件交接；实际开发需要宿主代码编辑与项目运行能力。默认不提交、推送、部署或执行生产迁移，任务报告与业务文档不进公开提交。
+
+### test-case-design：基于 PRD 的多类型测试用例
+
+**入口**：[skills/test-case-design/SKILL.md](skills/test-case-design/SKILL.md)
+
+**输入与联动**：指定 PRD 或本次任务前置 PRD，技术方案可选。使用同任务 `pipeline.json` 或明确交接自动读取，支持 `resolve --only-prd`，不强制需要技术方案，不跨任务猜最新，也不读技能样例冒充用户文档。
+
+**缺 PRD 行为**：单独调用没有可用 PRD 时，先问“是否要我先帮你完善 PRD，再基于它生成测试用例？”用户同意才读取 requirement-analysis 补写；选择已有则请求有效材料；拒绝就停止。新生成规则未确认时预期保持待确认，不升级为确定验收。
+
+**设计内容**：支持功能、边界、异常、权限、安全防护、接口、状态、兼容、可访问性、性能、可靠性、回归和用户验收等类型；另行区分层级和设计方法。每条 TC 关联 REQ/AC，包含优先级理由、前提、具体数据、逐步操作与预期、断言、清理和自动化建议。缺阈值、接口或设备范围不编造，列覆盖缺口或不适用理由。
+
+**输出与工具**：默认完整 test-cases.json 和 test-cases.md。所有生成用例未执行；用例定义、自动化实现与运行结果分开。绑定 PRD 摘要后开发可读取已登记 test_cases。
+
+- [references/test-design.md](skills/test-case-design/references/test-design.md)：类型、方法、风险与评审。
+- [references/case-contract.md](skills/test-case-design/references/case-contract.md)：用例字段、条件映射、覆盖和交接。
+- [scripts/cases.py](skills/test-case-design/scripts/cases.py)：标准库只读校验及安全 Markdown 渲染，不执行产品测试。
+- [assets/example-prd.json](skills/test-case-design/assets/example-prd.json)、[assets/example-cases.json](skills/test-case-design/assets/example-cases.json) 与 [完整用例示例](skills/test-case-design/assets/测试用例示例.md)：虚构 PRD 和多类型用例示范。
+- [tests/test_cases.py](skills/test-case-design/tests/test_cases.py)：契约、未执行状态、覆盖、版本、PRD-only 和开发读取兼容测试。
+
+**边界**：只设计用例，不连接真实产品、执行压力/破坏性测试或自动运行请求；安全仅用于合法防护验证。结构校验与条件映射不代表语义正确、覆盖充分或测试通过。缺环境/实现依据时单元层和实际自动化仍待评估。
+
+### 同任务文档交接
+
+前置 PRD、技术方案和测试用例在端到端时登记到同任务 `pipeline.json`。技术方案与 test_cases 都绑定 PRD 摘要；普通 resolve 供开发读取必需文档和已登记用例，`--only-prd` 供用例设计单独读取 PRD。更新 PRD 后旧设计与用例绑定保留为失效证据，重新评估登记才继续。完整协议见[前置交接规范](skills/product-development/references/handoff.md)。登记和哈希匹配不等于业务确认、开发批准或测试通过。
+
 <a id="local-checks"></a>
 ## 本地运行与验证
 
@@ -242,6 +297,24 @@ python3 -B -m unittest discover -s skills/technical-design/tests -v
 ```
 
 这是九种研发图的虚构示例。真实技术方案须以实际需求和系统材料重新分析，不能直接复制样例规则。`technical-design` 的检查、渲染退出码与下方说明一致。
+
+### 开发技能联动测试
+
+```bash
+python3 -B skills/product-development/scripts/pipeline.py --help
+python3 -B -m unittest discover -s skills/product-development/tests -v
+```
+
+登记与解析示例见交接规范：`register` 只更新同任务清单；`resolve` 返回 `ready`/0、`needs_input`/1 或 `invalid`/2。缺文件或歧义由 Agent 询问用户；非法/旧版本先修复。`ready` 只通过文件门禁，仍须读全 PRD/设计、确认目标项目及业务一致性后开发。
+
+### 测试用例示例与回归
+
+```bash
+python3 -B skills/test-case-design/scripts/cases.py check skills/test-case-design/assets/example-cases.json
+python3 -B -m unittest discover -s skills/test-case-design/tests -v
+```
+
+用例技能的 `render` 子命令可输出完整 Markdown；格式和字段见用例契约。`check` 的 0/1/2 分别为结构通过、不合格、读取/参数错误。检查不执行产品测试，生成用例全部未执行；技术方案不是 PRD-only 模式的必需输入。
 
 ### 正确解读检查结果
 
