@@ -2,7 +2,7 @@
 
 让一个人借助 Agent，把想法推进到可交付的成品。本仓库维护可移植的标准 `SKILL.md` 技能：流程、参考规范、脚本和示例放在同一目录，不绑定特定 Agent 或企业服务。
 
-当前维护 **4 个 SKILL**：[`requirement-analysis`](skills/requirement-analysis/SKILL.md) 生成图文 PRD；[`technical-design`](skills/technical-design/SKILL.md) 编写技术方案；[`test-case-design`](skills/test-case-design/SKILL.md) 基于 PRD 设计多类型测试用例；[`product-development`](skills/product-development/SKILL.md) 按前置文档实施开发与验证。完整技能链为 **PRD → 技术方案与测试用例 → 开发 → 验证交付**，不自动部署、提交或推送。
+当前维护 **4 个 SKILL**：[`requirement-analysis`](skills/requirement-analysis/SKILL.md) 生成图文 PRD；[`technical-design`](skills/technical-design/SKILL.md) 编写技术方案；[`test-case-design`](skills/test-case-design/SKILL.md) 基于 PRD 设计多类型测试用例；[`product-development`](skills/product-development/SKILL.md) 按前置文档实施开发与验证。完整技能链为 **PRD →（技术方案 ∥ 测试用例，并行生成）→ 汇合核验 → 开发 → 验证交付**，不自动部署、提交或推送。
 
 四项技能共用同一任务目录和 `pipeline.json`，用相对路径、文件摘要及 PRD 版本绑定交接。测试用例设计只要求 PRD，不强制需要技术方案；开发可自动读取已登记用例。开发或测试用例技能单独调用缺前置时，先询问是否帮助完善，用户同意才补写。
 
@@ -37,7 +37,12 @@ cd OnePersonTeamSKILLs
 请使用当前打开的 OnePersonTeamSKILLs 仓库，完成一次从一句话需求、PRD、技术方案到本地演示开发和验证的端到端交付。
 
 【技能发现与串联】
-读取当前仓库四个实际技能及必读资源，依次执行 requirement-analysis → technical-design → test-case-design → product-development。四个阶段共用 outputs/reminder-demo/ 作为任务文档根：需求阶段生成 prd.json、prd.html 并登记；设计阶段读取 PRD 生成 technical-design.json/HTML 并绑定摘要；用例阶段自动读取同任务 PRD（技术方案可选，不强制），生成 test-cases.json/MD 并绑定 PRD；开发阶段从本轮交接及 pipeline.json 自动读全 PRD、技术方案和已登记用例，不让我重复发送材料。不把仓库 assets 示例当真实前置，不按其他任务的修改时间选文件。
+读取当前仓库四个实际技能及必读资源，按 requirement-analysis →（technical-design ∥ test-case-design）→ 汇合核验 → product-development 编排。四项技能共用 outputs/reminder-demo/ 作为任务文档根：
+1. 先用 requirement-analysis 生成并核验 prd.json、prd.html，登记权威 PRD 的实际摘要、来源与原文状态。
+2. PRD 完成并登记后，同时启用 technical-design 和 test-case-design。两项读取同一版本的 PRD，分别生成 technical-design.json/HTML 和 test-cases.json/MD；测试用例不等待技术方案完成，技术方案仅作为后续可选补充依据。宿主支持并行任务时并行生成；不支持时明确说明执行限制，保留二者都只依赖 PRD 的关系，不新增“技术方案先完成”的前置条件。
+3. 两项内容分别生成和校验，写入各自文件，不互相覆盖；共享 pipeline.json 必须由宿主协调串行登记，禁止无协调并发写入。每次登记前核对当前 PRD 摘要仍与生成时读取的版本一致；有变化则暂停并重新评估，不把旧产物绑定到新 PRD。
+4. 两项产物都完成后，汇合核对 PRD、技术方案、测试用例的版本、REQ/AC/TC/DES 映射和规则一致性，阻断问题解决后再启动 product-development。开发阶段从本轮交接及 pipeline.json 自动读全 PRD、技术方案和已登记用例，不让我重复发送材料。
+不把仓库 assets 示例当真实前置，不按其他任务的修改时间选文件。
 
 【明确的虚构演示范围】
 一句话需求：给团队待办加一个到期提醒。
@@ -51,10 +56,10 @@ cd OnePersonTeamSKILLs
 成稿后分别执行内置中文表达优化，保留术语、字段、状态、条件、否定和承诺。需求文档含主流程和低保真界面/操作示意；技术方案按适用性绘制架构、时序、状态、数据流及研发依赖，不为凑图种添加无关组件。
 
 【测试用例】
-用 test-case-design 通过同任务 PRD 设计功能、边界、异常、权限、状态、回归和验收等适用用例，逐条关联 REQ 与测试条件 AC；性能、具体接口等缺标准时列待确认或说明不适用，不编 SLA、API 或错误码。每条 TC 包含前提、数据、操作、每步预期、断言、清理、优先级和自动化建议；生成阶段全部未执行。保存 test-cases.json 和 test-cases.md，校验后登记到 pipeline.json 并绑定 PRD 摘要。若单独调用缺 PRD，先问是否帮我完善，等待回复；本次已明确授权前置生成，不重复问同一许可。
+用 test-case-design 在 PRD 完成后与 technical-design 同时启用，通过同任务 PRD 设计功能、边界、异常、权限、状态、回归和验收等适用用例，逐条关联 REQ 与测试条件 AC；不等待技术方案完成。性能、具体接口等缺标准时列待确认或说明不适用，不编 SLA、API 或错误码。每条 TC 包含前提、数据、操作、每步预期、断言、清理、优先级和自动化建议；生成阶段全部未执行。保存 test-cases.json 和 test-cases.md，校验后由宿主串行登记到 pipeline.json 并绑定实际读取的 PRD 摘要。汇合时如需参考技术方案补充实现相关用例，保留原 PRD 规则与确认状态，不把补充评审变成用例启动前置。若单独调用缺 PRD，先问是否帮我完善，等待回复；本次已明确授权前置生成，不重复问同一许可。
 
 【开发前门禁与实施】
-将前置权威 JSON 登记到 pipeline.json，完整读取并核验路径、摘要、设计绑定版本及正文一致性。开发授权只覆盖上述明确的本地演示。新的关键建议、冲突或缺失规则先问，不能把“完善再开发”当成自动批准所有设计。若缺少 PRD/技术方案，先询问是否帮我完善；此提示已明确授权前置生成，无需重复询问已有流程许可。
+等待技术方案和测试用例两项完成并通过各自校验，由宿主串行完成前置权威 JSON 的登记，再完整读取并核验路径、摘要、两项 PRD 绑定版本及正文一致性；任一分支未完成或有阻断，不抢先进入开发。开发授权只覆盖上述明确的本地演示。新的关键建议、冲突或缺失规则先问，不能把“完善再开发”当成自动批准所有设计。若缺少 PRD/技术方案，先询问是否帮我完善；此提示已明确授权前置生成，无需重复询问已有流程许可。
 通过门禁后，在 app/ 实现实际终端入口、领域逻辑与测试。包含设置冲突、无权限、旧版本、已完成、重复时间推进、历史通知权限撤销等异常，不只生成骨架、TODO 或 mock 成功截图。记录 REQ → DES → 文件/符号 → 测试。
 
 【验证与交付】
@@ -242,7 +247,7 @@ cd OnePersonTeamSKILLs
 
 **入口**：[skills/test-case-design/SKILL.md](skills/test-case-design/SKILL.md)
 
-**输入与联动**：指定 PRD 或本次任务前置 PRD，技术方案可选。使用同任务 `pipeline.json` 或明确交接自动读取，支持 `resolve --only-prd`，不强制需要技术方案，不跨任务猜最新，也不读技能样例冒充用户文档。
+**输入与联动**：指定 PRD 或本次任务前置 PRD，技术方案可选。端到端在 PRD 完成后与 technical-design 同时启用，独立生成用例，不等待技术方案完成；两项产物汇合核验后再进入开发。使用同任务 `pipeline.json` 或明确交接自动读取，支持 `resolve --only-prd`，不强制需要技术方案，不跨任务猜最新，也不读技能样例冒充用户文档。
 
 **缺 PRD 行为**：单独调用没有可用 PRD 时，先问“是否要我先帮你完善 PRD，再基于它生成测试用例？”用户同意才读取 requirement-analysis 补写；选择已有则请求有效材料；拒绝就停止。新生成规则未确认时预期保持待确认，不升级为确定验收。
 
@@ -260,7 +265,7 @@ cd OnePersonTeamSKILLs
 
 ### 同任务文档交接
 
-前置 PRD、技术方案和测试用例在端到端时登记到同任务 `pipeline.json`。技术方案与 test_cases 都绑定 PRD 摘要；普通 resolve 供开发读取必需文档和已登记用例，`--only-prd` 供用例设计单独读取 PRD。更新 PRD 后旧设计与用例绑定保留为失效证据，重新评估登记才继续。完整协议见[前置交接规范](skills/product-development/references/handoff.md)。登记和哈希匹配不等于业务确认、开发批准或测试通过。
+前置 PRD、技术方案和测试用例在端到端时登记到同任务 `pipeline.json`。PRD 完成后，技术方案与测试用例基于同一 PRD 版本并行生成；**内容并行，清单登记由宿主串行协调**，当前交接脚本不支持无协调并发写。技术方案与 test_cases 都绑定实际读取的 PRD 摘要，登记前核对 PRD 未变化；两项产物完成且版本、规则与映射核验通过后再启动开发。普通 resolve 供开发读取必需文档和已登记用例，`--only-prd` 供用例设计单独读取 PRD。更新 PRD 后旧设计与用例绑定保留为失效证据，重新评估登记才继续。完整协议见[前置交接规范](skills/product-development/references/handoff.md)。登记和哈希匹配不等于业务确认、开发批准或测试通过。
 
 <a id="local-checks"></a>
 ## 本地运行与验证
